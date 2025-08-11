@@ -1,6 +1,7 @@
 {
   "english": {
-    "happy": ["sad", "unhappy"],
+    
+    "happy": ["sad", "unhappy","sudama"],
     "good": ["bad", "evil"],
     "big": ["small", "tiny"],
     "fast": ["slow"],
