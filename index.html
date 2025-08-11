@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AntonymSite (Offline - Live Search)</title>
+  <style>
+    :root{--bg:#f3f6ff;--card:#ffffff;--accent:#1f6feb}
+    body{font-family:Inter,system-ui,Arial;margin:0;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .wrap{width:960px;max-width:96%;padding:28px}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(20,30,60,0.08);padding:22px}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:0 0 18px;color:#445}
+    form{display:flex;gap:10px;align-items:center}
+    input[type=text]{flex:1;padding:10px 12px;border:1px solid #e3e7ee;border-radius:8px;font-size:16px}
+    select{padding:10px;border-radius:8px;border:1px solid #e3e7ee}
+    .result{margin-top:18px}
+    ul.list{padding-left:18px}
+    .muted{color:#667}
+    footer{margin-top:14px;font-size:13px;color:#556}
+    .small{font-size:13px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>AntonymSite (Live Search)</h1>
+      <p class="lead">Type an English or Hindi word and choose the language — antonyms will appear instantly.</p>
+
+      <form onsubmit="return false">
+        <input id="wordInput" type="text" placeholder="Enter word (e.g. happy / दुख)" autocomplete="off" />
+        <select id="langSelect">
+          <option value="english">English</option>
+          <option value="hindi">Hindi</option>
+        </select>
+      </form>
+
+      <div class="result" id="resultArea">
+        <p class="small muted">Load status: <span id="status">Loading dictionary...</span></p>
+      </div>
+
+      <footer>
+        <div class="small">Tip: To add more words, edit <code>antonyms.json</code> in the same folder.</div>
+      </footer>
+    </div>
+  </div>
+
+<script>
+let DICT = null;
+const status = document.getElementById('status');
+const resultArea = document.getElementById('resultArea');
+const input = document.getElementById('wordInput');
+const langSelect = document.getElementById('langSelect');
+
+async function loadDict(){
+  try{
+    const res = await fetch('antonyms.json');
+    if(!res.ok) throw new Error('Fetch failed');
+    DICT = await res.json();
+    status.textContent = 'Dictionary loaded ✓';
+  }catch(err){
+    status.textContent = 'Failed to load antonyms.json — using small built-in dictionary';
+    console.warn('Failed to fetch antonyms.json', err);
+    DICT = {
+      "english":{
+        "happy": ["sad","unhappy"],
+        "big": ["small","tiny"],
+        "fast": ["slow"]
+      },
+      "hindi":{
+        "खुश": ["दुखी","उदास"],
+        "बड़ा": ["छोटा","नन्हा"],
+        "तेज़": ["धीमा"]
+      }
+    };
+  }
+}
+
+function normalizeWord(w){
+  return (w||'').trim().toLowerCase();
+}
+
+function showResult(html){
+  resultArea.innerHTML = html;
+}
+
+function lookup(word, lang){
+  if(!DICT) return null;
+  const lookupKey = normalizeWord(word);
+  if(DICT[lang] && DICT[lang][lookupKey]) return DICT[lang][lookupKey];
+  return null;
+}
+
+function handleSearch(){
+  const word = input.value;
+  const lang = langSelect.value;
+  if(!word.trim()){ showResult('<p class="muted">Please type a word.</p>'); return; }
+  const antonyms = lookup(word, lang);
+  if(antonyms && antonyms.length){
+    showResult(`<p>Antonyms for <strong>${word}</strong> (${lang}):</p><ul class="list">${antonyms.map(a=>`<li>${a}</li>`).join('')}</ul>`);
+  } else {
+    showResult(`<p class="muted">No antonyms found for <strong>${word}</strong> in <strong>${lang}</strong>.</p>`);
+  }
+}
+
+input.addEventListener('input', handleSearch);
+langSelect.addEventListener('change', handleSearch);
+
+loadDict();
+</script>
+</body>
+</html>
